@@ -12,9 +12,40 @@ st.set_page_config(
 )
 
 # =========================
+# CSS
+# =========================
+st.markdown("""
+<style>
+
+.stApp {
+    background: linear-gradient(180deg,#0f172a,#111827);
+    color:white;
+}
+
+#MainMenu {visibility:hidden;}
+footer {visibility:hidden;}
+header {visibility:hidden;}
+
+h1 {
+    color:white !important;
+    text-align:center;
+    font-size:48px !important;
+}
+
+[data-testid="metric-container"]{
+    background:rgba(255,255,255,0.05);
+    border-radius:15px;
+    padding:15px;
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
 # GOOGLE SHEET CSV
 # =========================
-sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-mDqssb-v3rTpUI2gY/edit?usp=sharing"
+sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-mDqssb-v3rTpUI2gY/export?format=csv"
 
 # =========================
 # LOAD DATA
@@ -22,28 +53,15 @@ sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-m
 @st.cache_data
 def load_data():
 
-    # อ่านแบบไม่มี header
-    df = pd.read_csv(sheet_url, header=None)
+    # อ่านข้อมูลจาก Google Sheet
+    df = pd.read_csv(sheet_url)
+
+    # ล้างชื่อคอลัมน์
+    df.columns = df.columns.str.strip()
 
     return df
 
 df = load_data()
-
-# =========================
-# FIX HEADER
-# =========================
-df.columns = [
-    "Asset ID",
-    "Device",
-    "Brand",
-    "User",
-    "Department",
-    "SerialNumber",
-    "Status"
-]
-
-# ลบแถวหัวตารางเดิม
-df = df.iloc[1:].reset_index(drop=True)
 
 # =========================
 # TITLE
@@ -90,9 +108,12 @@ c4.metric("Repair", repair_count)
 # SEARCH
 # =========================
 search = st.text_input(
-    "🔍 ค้นหา"
+    "🔍 ค้นหา Asset / User / Device"
 )
 
+# =========================
+# FILTER DATA
+# =========================
 df_show = df.copy()
 
 if search:
@@ -120,8 +141,14 @@ with col1:
     fig = px.pie(
         df,
         names="Status",
-        hole=0.5,
-        title="สถานะอุปกรณ์"
+        title="สถานะอุปกรณ์",
+        hole=0.5
+    )
+
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="white"
     )
 
     st.plotly_chart(
@@ -138,6 +165,12 @@ with col2:
         title="Asset ตามแผนก"
     )
 
+    fig2.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="white"
+    )
+
     st.plotly_chart(
         fig2,
         use_container_width=True
@@ -152,4 +185,19 @@ st.dataframe(
     df_show,
     use_container_width=True,
     height=500
+)
+
+# =========================
+# DOWNLOAD CSV
+# =========================
+csv = df_show.to_csv(
+    index=False
+).encode("utf-8-sig")
+
+st.download_button(
+    "📥 ดาวน์โหลด CSV",
+    csv,
+    "it_asset.csv",
+    "text/csv",
+    use_container_width=True
 )
