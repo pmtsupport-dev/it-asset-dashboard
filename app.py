@@ -29,14 +29,12 @@ header {visibility:hidden;}
 h1 {
     color:white !important;
     text-align:center;
-    font-size:42px !important;
 }
 
 [data-testid="metric-container"]{
     background:rgba(255,255,255,0.05);
-    border-radius:18px;
+    border-radius:15px;
     padding:15px;
-    border:1px solid rgba(255,255,255,0.08);
 }
 
 </style>
@@ -53,19 +51,27 @@ sheet_url = "https://docs.google.com/spreadsheets/d/1JbU_0hNzrYNAGvoEnN0etL9DkJ0
 @st.cache_data
 def load_data():
 
-    df = pd.read_csv(sheet_url)
+    df = pd.read_csv(sheet_url, header=None)
 
     return df
 
 df = load_data()
 
 # =========================
-# CLEAN COLUMN
+# SET HEADER MANUAL
 # =========================
-df.columns = (
-    df.columns.astype(str)
-    .str.strip()
-)
+df.columns = [
+    "Asset ID",
+    "Device",
+    "Brand",
+    "User",
+    "Department",
+    "SerialNumber",
+    "Status"
+]
+
+# ลบแถว Header เดิมออก
+df = df.iloc[1:].reset_index(drop=True)
 
 # =========================
 # TITLE
