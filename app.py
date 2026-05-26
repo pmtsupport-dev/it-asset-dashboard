@@ -43,7 +43,7 @@ h1 {
 # =========================
 # GOOGLE SHEET CSV
 # =========================
-sheet_url = "https://docs.google.com/spreadsheets/d/1JbU_0hNzrYNAGvoEnN0etL9DkJ0vnhbtM6KNHBYtUgY/export?format=csv"
+sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-mDqssb-v3rTpUI2gY/edit?gid=0#gid=0"
 
 # =========================
 # LOAD DATA
