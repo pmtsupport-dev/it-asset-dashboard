@@ -29,12 +29,14 @@ header {visibility:hidden;}
 h1 {
     color:white !important;
     text-align:center;
+    font-size:42px !important;
 }
 
 [data-testid="metric-container"]{
     background:rgba(255,255,255,0.05);
-    border-radius:15px;
+    border-radius:18px;
     padding:15px;
+    border:1px solid rgba(255,255,255,0.08);
 }
 
 </style>
@@ -76,26 +78,29 @@ st.title("💻 IT Asset Dashboard")
 total_asset = len(df)
 
 notebook_count = (
-    df['Device']
+    df["Device"]
     .astype(str)
-    .str.contains("Notebook", case=False)
+    .str.contains("Notebook", case=False, na=False)
     .sum()
 )
 
 computer_count = (
-    df['Device']
+    df["Device"]
     .astype(str)
-    .str.contains("Computer", case=False)
+    .str.contains("Computer", case=False, na=False)
     .sum()
 )
 
 repair_count = (
-    df['Status']
+    df["Status"]
     .astype(str)
-    .str.contains("Repair", case=False)
+    .str.contains("Repair", case=False, na=False)
     .sum()
 )
 
+# =========================
+# KPI DISPLAY
+# =========================
 c1, c2, c3, c4 = st.columns(4)
 
 c1.metric("สินทรัพย์ทั้งหมด", total_asset)
@@ -139,14 +144,15 @@ with col1:
 
     fig = px.pie(
         df,
-        names='Status',
-        title='สถานะอุปกรณ์',
+        names="Status",
+        title="สถานะอุปกรณ์",
         hole=0.5
     )
 
     fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="white"
     )
 
     st.plotly_chart(
@@ -158,14 +164,15 @@ with col2:
 
     fig2 = px.bar(
         df,
-        x='Department',
-        color='Status',
-        title='Asset ตามแผนก'
+        x="Department",
+        color="Status",
+        title="Asset ตามแผนก"
     )
 
     fig2.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="white"
     )
 
     st.plotly_chart(
