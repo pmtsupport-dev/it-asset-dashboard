@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 # =========================
-# PAGE CONFIG
+# PAGE
 # =========================
 st.set_page_config(
     page_title="IT Asset Dashboard",
@@ -12,38 +12,9 @@ st.set_page_config(
 )
 
 # =========================
-# CSS
-# =========================
-st.markdown("""
-<style>
-
-.stApp {
-    background: linear-gradient(180deg,#0f172a,#111827);
-    color:white;
-}
-
-#MainMenu {visibility:hidden;}
-footer {visibility:hidden;}
-header {visibility:hidden;}
-
-h1 {
-    color:white !important;
-    text-align:center;
-}
-
-[data-testid="metric-container"]{
-    background:rgba(255,255,255,0.05);
-    border-radius:15px;
-    padding:15px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# =========================
 # GOOGLE SHEET CSV
 # =========================
-sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-mDqssb-v3rTpUI2gY/edit?gid=0#gid=0"
+sheet_url = "ใส่ลิงก์ export csv ของคุณ"
 
 # =========================
 # LOAD DATA
@@ -51,27 +22,16 @@ sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-m
 @st.cache_data
 def load_data():
 
-    df = pd.read_csv(sheet_url, header=None)
+    df = pd.read_csv(sheet_url)
 
     return df
 
 df = load_data()
 
 # =========================
-# SET HEADER MANUAL
+# CLEAN COLUMN
 # =========================
-df.columns = [
-    "Asset ID",
-    "Device",
-    "Brand",
-    "User",
-    "Department",
-    "SerialNumber",
-    "Status"
-]
-
-# ลบแถว Header เดิมออก
-df = df.iloc[1:].reset_index(drop=True)
+df.columns = df.columns.str.strip()
 
 # =========================
 # TITLE
@@ -86,21 +46,21 @@ total_asset = len(df)
 notebook_count = (
     df["Device"]
     .astype(str)
-    .str.contains("Notebook", case=False, na=False)
+    .str.contains("Notebook", case=False)
     .sum()
 )
 
 computer_count = (
     df["Device"]
     .astype(str)
-    .str.contains("Computer", case=False, na=False)
+    .str.contains("Computer", case=False)
     .sum()
 )
 
 repair_count = (
     df["Status"]
     .astype(str)
-    .str.contains("Repair", case=False, na=False)
+    .str.contains("Repair", case=False)
     .sum()
 )
 
@@ -117,13 +77,8 @@ c4.metric("Repair", repair_count)
 # =========================
 # SEARCH
 # =========================
-search = st.text_input(
-    "🔍 ค้นหา Asset / User / Device"
-)
+search = st.text_input("🔍 ค้นหา")
 
-# =========================
-# FILTER
-# =========================
 df_show = df.copy()
 
 if search:
@@ -151,14 +106,8 @@ with col1:
     fig = px.pie(
         df,
         names="Status",
-        title="สถานะอุปกรณ์",
-        hole=0.5
-    )
-
-    fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="white"
+        hole=0.5,
+        title="สถานะอุปกรณ์"
     )
 
     st.plotly_chart(
@@ -172,13 +121,7 @@ with col2:
         df,
         x="Department",
         color="Status",
-        title="Asset ตามแผนก"
-    )
-
-    fig2.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="white"
+        title="จำนวน Asset ตามแผนก"
     )
 
     st.plotly_chart(
@@ -189,25 +132,10 @@ with col2:
 # =========================
 # TABLE
 # =========================
-st.subheader("📋 รายการทรัพย์สิน IT")
+st.subheader("📋 รายการทรัพย์สิน")
 
 st.dataframe(
     df_show,
     use_container_width=True,
     height=500
-)
-
-# =========================
-# DOWNLOAD CSV
-# =========================
-csv = df_show.to_csv(
-    index=False
-).encode("utf-8-sig")
-
-st.download_button(
-    "📥 ดาวน์โหลด CSV",
-    csv,
-    "it_asset.csv",
-    "text/csv",
-    use_container_width=True
 )
