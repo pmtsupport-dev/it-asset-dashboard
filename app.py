@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 # =========================
-# PAGE
+# PAGE CONFIG
 # =========================
 st.set_page_config(
     page_title="IT Asset Dashboard",
@@ -14,7 +14,7 @@ st.set_page_config(
 # =========================
 # GOOGLE SHEET CSV
 # =========================
-sheet_url = "ใส่ลิงก์ export csv ของคุณ"
+sheet_url = "https://docs.google.com/spreadsheets/d/1JbU_0hNzrYNAGvoEnN0etL9DkJ0vnhbtM6KNHBYtUgY/export?format=csv"
 
 # =========================
 # LOAD DATA
@@ -22,16 +22,28 @@ sheet_url = "ใส่ลิงก์ export csv ของคุณ"
 @st.cache_data
 def load_data():
 
-    df = pd.read_csv(sheet_url)
+    # อ่านแบบไม่มี header
+    df = pd.read_csv(sheet_url, header=None)
 
     return df
 
 df = load_data()
 
 # =========================
-# CLEAN COLUMN
+# FIX HEADER
 # =========================
-df.columns = df.columns.str.strip()
+df.columns = [
+    "Asset ID",
+    "Device",
+    "Brand",
+    "User",
+    "Department",
+    "SerialNumber",
+    "Status"
+]
+
+# ลบแถวหัวตารางเดิม
+df = df.iloc[1:].reset_index(drop=True)
 
 # =========================
 # TITLE
@@ -46,21 +58,21 @@ total_asset = len(df)
 notebook_count = (
     df["Device"]
     .astype(str)
-    .str.contains("Notebook", case=False)
+    .str.contains("Notebook", case=False, na=False)
     .sum()
 )
 
 computer_count = (
     df["Device"]
     .astype(str)
-    .str.contains("Computer", case=False)
+    .str.contains("Computer", case=False, na=False)
     .sum()
 )
 
 repair_count = (
     df["Status"]
     .astype(str)
-    .str.contains("Repair", case=False)
+    .str.contains("Repair", case=False, na=False)
     .sum()
 )
 
@@ -77,7 +89,9 @@ c4.metric("Repair", repair_count)
 # =========================
 # SEARCH
 # =========================
-search = st.text_input("🔍 ค้นหา")
+search = st.text_input(
+    "🔍 ค้นหา"
+)
 
 df_show = df.copy()
 
@@ -121,7 +135,7 @@ with col2:
         df,
         x="Department",
         color="Status",
-        title="จำนวน Asset ตามแผนก"
+        title="Asset ตามแผนก"
     )
 
     st.plotly_chart(
