@@ -14,7 +14,7 @@ st.set_page_config(
 # =========================
 # GOOGLE SHEET CSV
 # =========================
-sheet_url = "https://docs.google.com/spreadsheets/d/1JbU_0hNzrYNAGvoEnN0etL9DkJ0vnhbtM6KNHBYtUgY/export?format=csv"
+sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-mDqssb-v3rTpUI2gY/edit?usp=sharing"
 
 # =========================
 # LOAD DATA
