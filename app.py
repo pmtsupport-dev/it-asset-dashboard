@@ -386,8 +386,10 @@ with st.form("add_form"):
         }
 
         new_df = pd.concat(
-            [st.session_state.df,
-            pd.DataFrame([new_row])],
+            [
+                st.session_state.df,
+                pd.DataFrame([new_row])
+            ],
             ignore_index=True
         )
 
@@ -402,21 +404,30 @@ st.subheader("🗑️ ลบข้อมูล")
 
 delete_asset = st.selectbox(
     "เลือก Asset ID ที่ต้องการลบ",
-    edited_df["Asset ID"]
+    st.session_state.df["Asset ID"]
     .astype(str)
+    .unique()
 )
 
-if st.button("❌ ลบข้อมูล"):
+if st.button(
+    "❌ ลบข้อมูล",
+    use_container_width=True
+):
 
-    new_df = edited_df[
-        edited_df["Asset ID"]
-        .astype(str)
-        != str(delete_asset)
-    ]
+    st.session_state.df = (
+        st.session_state.df[
+            st.session_state.df["Asset ID"]
+            .astype(str)
+            != str(delete_asset)
+        ]
+        .reset_index(drop=True)
+    )
 
-    st.session_state.df = new_df
+    st.success(
+        f"✅ ลบ Asset ID {delete_asset} เรียบร้อย"
+    )
 
-    st.success("✅ ลบข้อมูลเรียบร้อย")
+    st.rerun()
 
 # =========================
 # DOWNLOAD CSV
