@@ -182,7 +182,14 @@ with col1:
         names="Status",
         values="Count",
         title="จำนวนอุปกรณ์ตามสถานะ",
-        hole=0.5
+        hole=0.5,
+        color="Status",
+
+        color_discrete_map={
+            "Active": "#22c55e",
+            "Repair": "#ef4444",
+            "Spare": "#f59e0b"
+        }
     )
 
     fig.update_traces(
@@ -218,10 +225,19 @@ with col2:
         device_department,
         x="Department",
         y="Count",
-        color="Device",
-        barmode="group",
+        color="Department",
         text="Count",
-        title="จำนวนอุปกรณ์แยกตามแผนก"
+        barmode="group",
+        title="จำนวนอุปกรณ์แยกตามแผนก",
+
+        color_discrete_map={
+            "IT": "#3b82f6",
+            "HR": "#ec4899",
+            "Finance": "#f59e0b",
+            "Sales": "#22c55e",
+            "Marketing": "#8b5cf6",
+            "Admin": "#ef4444"
+        }
     )
 
     fig2.update_traces(
@@ -234,7 +250,8 @@ with col2:
         font_color="white",
         height=450,
         xaxis_title="แผนก",
-        yaxis_title="จำนวนอุปกรณ์"
+        yaxis_title="จำนวนอุปกรณ์",
+        legend_title="Department"
     )
 
     st.plotly_chart(
