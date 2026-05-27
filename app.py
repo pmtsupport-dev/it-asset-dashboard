@@ -43,6 +43,7 @@ h1,h2,h3,h4,label,p,div{
     background:#2563eb;
     color:white;
     font-weight:bold;
+    height:45px;
 }
 
 </style>
@@ -58,44 +59,33 @@ sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-m
 # =========================
 @st.cache_data
 def load_data():
+
     df = pd.read_csv(sheet_url)
+
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.replace("\n", "")
+    )
+
+    # แปลง SerialNumber เป็นข้อความ
+    if "SerialNumber" in df.columns:
+        df["SerialNumber"] = df["SerialNumber"].astype(str)
+
     return df
 
-df = load_data()
+# =========================
+# SESSION STATE
+# =========================
+if "df" not in st.session_state:
+    st.session_state.df = load_data()
 
-# =========================
-# CLEAN COLUMN
-# =========================
-df.columns = df.columns.str.strip()
+df = st.session_state.df
 
 # =========================
 # TITLE
 # =========================
 st.title("💻 IT Asset Dashboard")
-
-# =========================
-# KPI
-# =========================
-total_asset = len(df)
-
-notebook_count = len(
-    df[df["Device"] == "Notebook"]
-)
-
-computer_count = len(
-    df[df["Device"] == "Computer"]
-)
-
-repair_count = len(
-    df[df["Status"] == "Repair"]
-)
-
-c1, c2, c3, c4 = st.columns(4)
-
-c1.metric("สินทรัพย์ทั้งหมด", total_asset)
-c2.metric("Notebook", notebook_count)
-c3.metric("Computer", computer_count)
-c4.metric("Repair", repair_count)
 
 # =========================
 # SEARCH
@@ -104,18 +94,63 @@ search = st.text_input(
     "🔍 ค้นหา Asset / User / Device"
 )
 
+# =========================
+# FILTER
+# =========================
 if search:
 
-    df = df[
+    df_show = df[
         df.astype(str)
         .apply(
-            lambda row: row.str.contains(
+            lambda row:
+            row.str.contains(
                 search,
-                case=False
+                case=False,
+                na=False
             ).any(),
             axis=1
         )
     ]
+
+else:
+
+    df_show = df.copy()
+
+# =========================
+# KPI
+# =========================
+total_asset = len(df)
+
+notebook_count = (
+    df["Device"]
+    .astype(str)
+    .str.contains("Notebook", case=False, na=False)
+    .sum()
+)
+
+computer_count = (
+    df["Device"]
+    .astype(str)
+    .str.contains("Computer", case=False, na=False)
+    .sum()
+)
+
+repair_count = (
+    df["Status"]
+    .astype(str)
+    .str.contains("Repair", case=False, na=False)
+    .sum()
+)
+
+# =========================
+# KPI DISPLAY
+# =========================
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric("สินทรัพย์ทั้งหมด", total_asset)
+c2.metric("Notebook", notebook_count)
+c3.metric("Computer", computer_count)
+c4.metric("Repair", repair_count)
 
 # =========================
 # CHART
@@ -132,8 +167,9 @@ with col1:
     )
 
     fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="white"
     )
 
     st.plotly_chart(
@@ -151,8 +187,9 @@ with col2:
     )
 
     fig2.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="white"
     )
 
     st.plotly_chart(
@@ -166,7 +203,7 @@ with col2:
 st.subheader("📋 รายการทรัพย์สิน")
 
 edited_df = st.data_editor(
-    df,
+    df_show,
     use_container_width=True,
     num_rows="dynamic",
     hide_index=True,
@@ -178,7 +215,7 @@ edited_df = st.data_editor(
 # =========================
 st.subheader("✏️ แก้ไขข้อมูลย้อนหลัง")
 
-asset_list = edited_df["Asset ID"].tolist()
+asset_list = edited_df["Asset ID"].astype(str).tolist()
 
 selected_asset = st.selectbox(
     "เลือก Asset ID",
@@ -186,35 +223,44 @@ selected_asset = st.selectbox(
 )
 
 selected_index = edited_df[
-    edited_df["Asset ID"] == selected_asset
+    edited_df["Asset ID"].astype(str) == str(selected_asset)
 ].index[0]
 
 with st.form("edit_form"):
 
     asset_id = st.text_input(
         "Asset ID",
-        value=edited_df.loc[selected_index, "Asset ID"]
+        value=str(
+            edited_df.loc[selected_index, "Asset ID"]
+        )
     )
 
-    device = st.selectbox(
+    device = st.text_input(
         "Device",
-        ["Notebook", "Computer", "Monitor", "Printer"],
-        index=0
+        value=str(
+            edited_df.loc[selected_index, "Device"]
+        )
     )
 
     brand = st.text_input(
         "Brand",
-        value=edited_df.loc[selected_index, "Brand"]
+        value=str(
+            edited_df.loc[selected_index, "Brand"]
+        )
     )
 
     user = st.text_input(
         "User",
-        value=edited_df.loc[selected_index, "User"]
+        value=str(
+            edited_df.loc[selected_index, "User"]
+        )
     )
 
     department = st.text_input(
         "Department",
-        value=edited_df.loc[selected_index, "Department"]
+        value=str(
+            edited_df.loc[selected_index, "Department"]
+        )
     )
 
     serial = st.text_input(
@@ -236,15 +282,27 @@ with st.form("edit_form"):
 
     if submit_edit:
 
-        edited_df.loc[selected_index, "Asset ID"] = asset_id
-        edited_df.loc[selected_index, "Device"] = device
-        edited_df.loc[selected_index, "Brand"] = brand
-        edited_df.loc[selected_index, "User"] = user
-        edited_df.loc[selected_index, "Department"] = department
-        edited_df.loc[selected_index, "SerialNumber"] = serial
-        edited_df.loc[selected_index, "Status"] = status
+        edited_df["SerialNumber"] = (
+            edited_df["SerialNumber"]
+            .astype(str)
+        )
+
+        edited_df.loc[selected_index, "Asset ID"] = str(asset_id)
+        edited_df.loc[selected_index, "Device"] = str(device)
+        edited_df.loc[selected_index, "Brand"] = str(brand)
+        edited_df.loc[selected_index, "User"] = str(user)
+        edited_df.loc[selected_index, "Department"] = str(department)
+        edited_df.loc[selected_index, "SerialNumber"] = str(serial)
+        edited_df.loc[selected_index, "Status"] = str(status)
+
+        st.session_state.df = edited_df.copy()
 
         st.success("✅ แก้ไขข้อมูลเรียบร้อย")
+
+        st.toast(
+            "อัปเดตข้อมูลสำเร็จ",
+            icon="✅"
+        )
 
 # =========================
 # ADD DATA
@@ -254,15 +312,11 @@ st.subheader("➕ เพิ่มทรัพย์สินใหม่")
 with st.form("add_form"):
 
     new_asset = st.text_input("Asset ID")
-    new_device = st.selectbox(
-        "Device ",
-        ["Notebook", "Computer", "Monitor", "Printer"]
-    )
-
-    new_brand = st.text_input("Brand ")
-    new_user = st.text_input("User ")
-    new_department = st.text_input("Department ")
-    new_serial = st.text_input("Serial Number ")
+    new_device = st.text_input("Device")
+    new_brand = st.text_input("Brand")
+    new_user = st.text_input("User")
+    new_department = st.text_input("Department")
+    new_serial = st.text_input("SerialNumber")
 
     new_status = st.selectbox(
         "Status ",
@@ -276,44 +330,54 @@ with st.form("add_form"):
     if submit:
 
         new_row = {
-            "Asset ID": new_asset,
-            "Device": new_device,
-            "Brand": new_brand,
-            "User": new_user,
-            "Department": new_department,
-            "SerialNumber": new_serial,
-            "Status": new_status
+            "Asset ID": str(new_asset),
+            "Device": str(new_device),
+            "Brand": str(new_brand),
+            "User": str(new_user),
+            "Department": str(new_department),
+            "SerialNumber": str(new_serial),
+            "Status": str(new_status)
         }
 
-        edited_df = pd.concat(
-            [edited_df, pd.DataFrame([new_row])],
+        new_df = pd.concat(
+            [st.session_state.df, pd.DataFrame([new_row])],
             ignore_index=True
         )
 
+        st.session_state.df = new_df
+
         st.success("✅ เพิ่มข้อมูลเรียบร้อย")
 
+        st.toast(
+            "เพิ่ม Asset สำเร็จ",
+            icon="✅"
+        )
+
 # =========================
-# DELETE DATA
+# DELETE
 # =========================
 st.subheader("🗑️ ลบข้อมูล")
 
 delete_asset = st.selectbox(
     "เลือก Asset ID ที่ต้องการลบ",
-    edited_df["Asset ID"]
+    edited_df["Asset ID"].astype(str)
 )
 
 if st.button("❌ ลบข้อมูล"):
 
-    edited_df = edited_df[
-        edited_df["Asset ID"] != delete_asset
+    new_df = edited_df[
+        edited_df["Asset ID"].astype(str)
+        != str(delete_asset)
     ]
+
+    st.session_state.df = new_df
 
     st.success("✅ ลบข้อมูลเรียบร้อย")
 
 # =========================
 # DOWNLOAD CSV
 # =========================
-csv = edited_df.to_csv(
+csv = st.session_state.df.to_csv(
     index=False
 ).encode("utf-8-sig")
 
@@ -331,6 +395,9 @@ st.download_button(
 if st.button("🔄 Refresh"):
 
     st.cache_data.clear()
+
+    st.session_state.df = load_data()
+
     st.rerun()
 
 # =========================
@@ -346,7 +413,7 @@ border:1px solid rgba(255,255,255,0.1);
 ">
 
 📊 จำนวนทรัพย์สินทั้งหมด :
-<b>{len(edited_df)}</b> รายการ
+<b>{len(st.session_state.df)}</b> รายการ
 
 </div>
 """, unsafe_allow_html=True)
