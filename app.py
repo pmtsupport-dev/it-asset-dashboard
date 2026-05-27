@@ -108,7 +108,13 @@ def load_data():
 
     return df
 
-df = load_data()
+# =========================
+# SESSION STATE
+# =========================
+if "df" not in st.session_state:
+    st.session_state.df = load_data()
+
+df = st.session_state.df
 
 # =========================
 # SEARCH
@@ -122,7 +128,7 @@ search = st.text_input(
 # =========================
 if search:
 
-    df = df[
+    df_show = df[
         df.astype(str)
         .apply(
             lambda row:
@@ -130,6 +136,10 @@ if search:
             axis=1
         )
     ]
+
+else:
+
+    df_show = df
 
 # =========================
 # KPI
@@ -168,28 +178,16 @@ st.title("💻 IT Asset Dashboard")
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
-    st.metric(
-        "สินทรัพย์ทั้งหมด",
-        total_asset
-    )
+    st.metric("สินทรัพย์ทั้งหมด", total_asset)
 
 with c2:
-    st.metric(
-        "Notebook",
-        notebook_count
-    )
+    st.metric("Notebook", notebook_count)
 
 with c3:
-    st.metric(
-        "Computer",
-        computer_count
-    )
+    st.metric("Computer", computer_count)
 
 with c4:
-    st.metric(
-        "Repair",
-        repair_count
-    )
+    st.metric("Repair", repair_count)
 
 # =========================
 # CHARTS
@@ -239,17 +237,31 @@ with col2:
     )
 
 # =========================
-# TABLE
+# TABLE EDITOR
 # =========================
 st.subheader("📋 รายการทรัพย์สิน")
 
 edited_df = st.data_editor(
-    df,
+    df_show,
     num_rows="dynamic",
     use_container_width=True,
     height=500,
     key="asset_editor"
 )
+
+# =========================
+# UPDATE BUTTON
+# =========================
+if st.button("✅ อัปเดตข้อมูล", use_container_width=True):
+
+    st.session_state.df = edited_df.copy()
+
+    st.success("✅ แก้ไขข้อมูลเรียบร้อย")
+
+    st.toast(
+        "อัปเดตข้อมูลสำเร็จ",
+        icon="✅"
+    )
 
 # =========================
 # ADD ASSET
@@ -302,13 +314,19 @@ with st.form("add_asset"):
             "Status": status
         }
 
-        edited_df = pd.concat(
-            [edited_df, pd.DataFrame([new_row])],
+        new_df = pd.concat(
+            [st.session_state.df, pd.DataFrame([new_row])],
             ignore_index=True
         )
 
+        st.session_state.df = new_df
+
         st.success("✅ เพิ่มข้อมูลเรียบร้อย")
-        st.toast("เพิ่ม Asset สำเร็จ", icon="✅")
+
+        st.toast(
+            "เพิ่ม Asset สำเร็จ",
+            icon="✅"
+        )
 
 # =========================
 # DELETE
@@ -325,9 +343,11 @@ if st.button("❌ ลบข้อมูล"):
 
     try:
 
-        edited_df = edited_df.drop(delete_index)
+        new_df = st.session_state.df.drop(delete_index)
 
-        edited_df = edited_df.reset_index(drop=True)
+        new_df = new_df.reset_index(drop=True)
+
+        st.session_state.df = new_df
 
         st.success("✅ ลบข้อมูลเรียบร้อย")
 
@@ -336,44 +356,11 @@ if st.button("❌ ลบข้อมูล"):
         st.error("❌ ลบไม่สำเร็จ")
 
 # =========================
-# SAVE
+# SAVE CSV
 # =========================
 st.subheader("💾 บันทึกข้อมูล")
 
-if st.button("💾 Save Asset Data"):
-
-    try:
-
-        edited_df.to_csv(
-            "it_asset_backup.csv",
-            index=False,
-            encoding="utf-8-sig"
-        )
-
-        st.success("✅ บันทึกข้อมูลเรียบร้อย")
-
-        st.toast(
-            "📁 Save สำเร็จ",
-            icon="✅"
-        )
-
-    except Exception as e:
-
-        st.error(f"❌ Error: {e}")
-
-# =========================
-# REFRESH
-# =========================
-if st.button("🔄 Refresh"):
-
-    st.cache_data.clear()
-
-    st.rerun()
-
-# =========================
-# DOWNLOAD CSV
-# =========================
-csv = edited_df.to_csv(
+csv = st.session_state.df.to_csv(
     index=False
 ).encode("utf-8-sig")
 
@@ -384,6 +371,17 @@ st.download_button(
     mime="text/csv",
     use_container_width=True
 )
+
+# =========================
+# REFRESH
+# =========================
+if st.button("🔄 Refresh"):
+
+    st.cache_data.clear()
+
+    st.session_state.df = load_data()
+
+    st.rerun()
 
 # =========================
 # SUMMARY
@@ -398,7 +396,7 @@ border:1px solid rgba(255,255,255,0.1);
 ">
 
 📊 จำนวนทรัพย์สินทั้งหมด:
-<b>{len(edited_df)}</b> รายการ
+<b>{len(st.session_state.df)}</b> รายการ
 
 </div>
 """, unsafe_allow_html=True)
