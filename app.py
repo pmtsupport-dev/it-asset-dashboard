@@ -68,9 +68,11 @@ def load_data():
         .str.replace("\n", "")
     )
 
-    # แปลง SerialNumber เป็นข้อความ
     if "SerialNumber" in df.columns:
-        df["SerialNumber"] = df["SerialNumber"].astype(str)
+        df["SerialNumber"] = (
+            df["SerialNumber"]
+            .astype(str)
+        )
 
     return df
 
@@ -155,21 +157,43 @@ c4.metric("Repair", repair_count)
 # =========================
 # CHART
 # =========================
+st.subheader("📊 สรุปข้อมูลอุปกรณ์")
+
 col1, col2 = st.columns(2)
 
+# =========================
+# PIE CHART
+# =========================
 with col1:
 
+    status_count = (
+        df["Status"]
+        .value_counts()
+        .reset_index()
+    )
+
+    status_count.columns = [
+        "Status",
+        "Count"
+    ]
+
     fig = px.pie(
-        df,
+        status_count,
         names="Status",
-        hole=0.5,
-        title="สถานะอุปกรณ์"
+        values="Count",
+        title="จำนวนอุปกรณ์ตามสถานะ",
+        hole=0.5
+    )
+
+    fig.update_traces(
+        textinfo="label+value"
     )
 
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font_color="white"
+        font_color="white",
+        height=450
     )
 
     st.plotly_chart(
@@ -177,19 +201,40 @@ with col1:
         use_container_width=True
     )
 
+# =========================
+# BAR CHART
+# =========================
 with col2:
 
+    device_department = (
+        df.groupby(
+            ["Department", "Device"]
+        )
+        .size()
+        .reset_index(name="Count")
+    )
+
     fig2 = px.bar(
-        df,
+        device_department,
         x="Department",
-        color="Status",
-        title="Asset ตามแผนก"
+        y="Count",
+        color="Device",
+        barmode="group",
+        text="Count",
+        title="จำนวนอุปกรณ์แยกตามแผนก"
+    )
+
+    fig2.update_traces(
+        textposition="outside"
     )
 
     fig2.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font_color="white"
+        font_color="white",
+        height=450,
+        xaxis_title="แผนก",
+        yaxis_title="จำนวนอุปกรณ์"
     )
 
     st.plotly_chart(
@@ -215,7 +260,11 @@ edited_df = st.data_editor(
 # =========================
 st.subheader("✏️ แก้ไขข้อมูลย้อนหลัง")
 
-asset_list = edited_df["Asset ID"].astype(str).tolist()
+asset_list = (
+    edited_df["Asset ID"]
+    .astype(str)
+    .tolist()
+)
 
 selected_asset = st.selectbox(
     "เลือก Asset ID",
@@ -223,7 +272,9 @@ selected_asset = st.selectbox(
 )
 
 selected_index = edited_df[
-    edited_df["Asset ID"].astype(str) == str(selected_asset)
+    edited_df["Asset ID"]
+    .astype(str)
+    == str(selected_asset)
 ].index[0]
 
 with st.form("edit_form"):
@@ -299,11 +350,6 @@ with st.form("edit_form"):
 
         st.success("✅ แก้ไขข้อมูลเรียบร้อย")
 
-        st.toast(
-            "อัปเดตข้อมูลสำเร็จ",
-            icon="✅"
-        )
-
 # =========================
 # ADD DATA
 # =========================
@@ -319,7 +365,7 @@ with st.form("add_form"):
     new_serial = st.text_input("SerialNumber")
 
     new_status = st.selectbox(
-        "Status ",
+        "Status",
         ["Active", "Spare", "Repair"]
     )
 
@@ -340,18 +386,14 @@ with st.form("add_form"):
         }
 
         new_df = pd.concat(
-            [st.session_state.df, pd.DataFrame([new_row])],
+            [st.session_state.df,
+            pd.DataFrame([new_row])],
             ignore_index=True
         )
 
         st.session_state.df = new_df
 
         st.success("✅ เพิ่มข้อมูลเรียบร้อย")
-
-        st.toast(
-            "เพิ่ม Asset สำเร็จ",
-            icon="✅"
-        )
 
 # =========================
 # DELETE
@@ -360,13 +402,15 @@ st.subheader("🗑️ ลบข้อมูล")
 
 delete_asset = st.selectbox(
     "เลือก Asset ID ที่ต้องการลบ",
-    edited_df["Asset ID"].astype(str)
+    edited_df["Asset ID"]
+    .astype(str)
 )
 
 if st.button("❌ ลบข้อมูล"):
 
     new_df = edited_df[
-        edited_df["Asset ID"].astype(str)
+        edited_df["Asset ID"]
+        .astype(str)
         != str(delete_asset)
     ]
 
