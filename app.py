@@ -1,6 +1,10 @@
+```python
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import gspread
+
+from google.oauth2.service_account import Credentials
 
 # =========================
 # PAGE CONFIG
@@ -50,17 +54,31 @@ h1,h2,h3,h4,label,p,div{
 """, unsafe_allow_html=True)
 
 # =========================
-# GOOGLE SHEET CSV
+# GOOGLE SHEET CONNECT
 # =========================
-sheet_url = "https://docs.google.com/spreadsheets/d/19t2bqMYMBi_nmHJlZbSCHILG8-mDqssb-v3rTpUI2gY/export?format=csv"
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+creds = Credentials.from_service_account_file(
+    "service_account.json",
+    scopes=scope
+)
+
+client = gspread.authorize(creds)
+
+sheet = client.open("IT_ASSET").sheet1
 
 # =========================
 # LOAD DATA
 # =========================
-@st.cache_data
+@st.cache_data(ttl=5)
 def load_data():
 
-    df = pd.read_csv(sheet_url)
+    data = sheet.get_all_records()
+
+    df = pd.DataFrame(data)
 
     df.columns = (
         df.columns
@@ -273,6 +291,28 @@ edited_df = st.data_editor(
 )
 
 # =========================
+# SAVE TABLE EDIT
+# =========================
+if st.button("💾 บันทึกตาราง"):
+
+    edited_df = edited_df.astype(str)
+
+    sheet.clear()
+
+    sheet.update(
+        [edited_df.columns.values.tolist()] +
+        edited_df.values.tolist()
+    )
+
+    st.session_state.df = edited_df
+
+    st.success("✅ บันทึกข้อมูลเรียบร้อย")
+
+    st.cache_data.clear()
+
+    st.rerun()
+
+# =========================
 # EDIT DATA
 # =========================
 st.subheader("✏️ แก้ไขข้อมูลย้อนหลัง")
@@ -340,8 +380,7 @@ with st.form("edit_form"):
 
     status = st.selectbox(
         "Status",
-        ["Active", "Spare", "Repair"],
-        index=0
+        ["Active", "Spare", "Repair"]
     )
 
     submit_edit = st.form_submit_button(
@@ -363,9 +402,20 @@ with st.form("edit_form"):
         edited_df.loc[selected_index, "SerialNumber"] = str(serial)
         edited_df.loc[selected_index, "Status"] = str(status)
 
+        sheet.clear()
+
+        sheet.update(
+            [edited_df.columns.values.tolist()] +
+            edited_df.values.tolist()
+        )
+
         st.session_state.df = edited_df.copy()
 
         st.success("✅ แก้ไขข้อมูลเรียบร้อย")
+
+        st.cache_data.clear()
+
+        st.rerun()
 
 # =========================
 # ADD DATA
@@ -410,9 +460,20 @@ with st.form("add_form"):
             ignore_index=True
         )
 
+        sheet.clear()
+
+        sheet.update(
+            [new_df.columns.values.tolist()] +
+            new_df.values.tolist()
+        )
+
         st.session_state.df = new_df
 
         st.success("✅ เพิ่มข้อมูลเรียบร้อย")
+
+        st.cache_data.clear()
+
+        st.rerun()
 
 # =========================
 # DELETE
@@ -440,9 +501,18 @@ if st.button(
         .reset_index(drop=True)
     )
 
+    sheet.clear()
+
+    sheet.update(
+        [st.session_state.df.columns.values.tolist()] +
+        st.session_state.df.values.tolist()
+    )
+
     st.success(
         f"✅ ลบ Asset ID {delete_asset} เรียบร้อย"
     )
+
+    st.cache_data.clear()
 
     st.rerun()
 
@@ -489,3 +559,4 @@ border:1px solid rgba(255,255,255,0.1);
 
 </div>
 """, unsafe_allow_html=True)
+```
