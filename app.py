@@ -4,11 +4,9 @@ import plotly.express as px
 import gspread
 from google.oauth2.service_account import Credentials
 
-# =========================
-
-# PAGE CONFIG
-
-# =========================
+=========================
+PAGE CONFIG
+=========================
 
 st.set_page_config(
 page_title="IT Asset Dashboard",
@@ -16,54 +14,17 @@ page_icon="💻",
 layout="wide"
 )
 
-# =========================
-
-# STYLE
-
-# =========================
+=========================
+STYLE
+=========================
 
 st.markdown("""
 
-<style>
-
-.stApp{
-    background: linear-gradient(180deg,#020617,#0f172a);
-    color:white;
-}
-
-#MainMenu {visibility:hidden;}
-footer {visibility:hidden;}
-header {visibility:hidden;}
-
-h1,h2,h3,h4,label,p,div{
-    color:white;
-}
-
-[data-testid="metric-container"]{
-    background: rgba(255,255,255,0.05);
-    border-radius:16px;
-    padding:15px;
-    border:1px solid rgba(255,255,255,0.08);
-}
-
-.stButton > button{
-    border-radius:12px;
-    border:none;
-    background:#2563eb;
-    color:white;
-    font-weight:bold;
-    height:45px;
-}
-
-</style>
-
 """, unsafe_allow_html=True)
 
-# =========================
-
-# GOOGLE SHEET CONNECT
-
-# =========================
+=========================
+GOOGLE SHEET CONNECT
+=========================
 
 scope = [
 "https://www.googleapis.com/auth/spreadsheets",
@@ -79,21 +40,19 @@ client = gspread.authorize(creds)
 
 sheet = client.open("IT_ASSET").sheet1
 
-# =========================
-
-# LOAD DATA
-
-# =========================
+=========================
+LOAD DATA
+=========================
 
 @st.cache_data(ttl=5)
 def load_data():
 
-```
 data = sheet.get_all_records()
 
 df = pd.DataFrame(data)
 
 if len(df) == 0:
+
     df = pd.DataFrame(columns=[
         "Asset ID",
         "Device",
@@ -104,45 +63,32 @@ if len(df) == 0:
         "Status"
     ])
 
-df.columns = (
-    df.columns
-    .str.strip()
-    .str.replace("\n", "")
-)
+df = df.astype(str)
 
-return df.astype(str)
-```
-
-# =========================
-
-# SESSION
-
-# =========================
+return df
+=========================
+SESSION
+=========================
 
 if "df" not in st.session_state:
 st.session_state.df = load_data()
 
 df = st.session_state.df
 
-# =========================
-
-# TITLE
-
-# =========================
+=========================
+TITLE
+=========================
 
 st.title("💻 IT Asset Dashboard")
 
-# =========================
-
-# SEARCH
-
-# =========================
+=========================
+SEARCH
+=========================
 
 search = st.text_input("🔍 ค้นหา")
 
 if search:
 
-```
 df_show = df[
     df.astype(str)
     .apply(
@@ -155,16 +101,13 @@ df_show = df[
         axis=1
     )
 ]
-```
 
 else:
+
 df_show = df.copy()
-
-# =========================
-
-# KPI
-
-# =========================
+=========================
+KPI
+=========================
 
 total_asset = len(df)
 
@@ -186,11 +129,9 @@ df["Status"]
 .sum()
 )
 
-# =========================
-
-# KPI DISPLAY
-
-# =========================
+=========================
+KPI DISPLAY
+=========================
 
 c1, c2, c3, c4 = st.columns(4)
 
@@ -199,11 +140,9 @@ c2.metric("Notebook", notebook_count)
 c3.metric("Computer", computer_count)
 c4.metric("Repair", repair_count)
 
-# =========================
-
-# CHART
-
-# =========================
+=========================
+CHART
+=========================
 
 st.subheader("📊 สรุปข้อมูลอุปกรณ์")
 
@@ -211,7 +150,6 @@ col1, col2 = st.columns(2)
 
 with col1:
 
-```
 status_count = (
     df["Status"]
     .value_counts()
@@ -227,7 +165,6 @@ fig = px.pie(
     status_count,
     names="Status",
     values="Count",
-    title="จำนวนอุปกรณ์ตามสถานะ",
     hole=0.5
 )
 
@@ -239,11 +176,9 @@ st.plotly_chart(
     fig,
     use_container_width=True
 )
-```
 
 with col2:
 
-```
 device_department = (
     df.groupby(
         ["Department", "Device"]
@@ -258,21 +193,16 @@ fig2 = px.bar(
     y="Count",
     color="Department",
     text="Count",
-    barmode="group",
-    title="จำนวนอุปกรณ์แยกตามแผนก"
+    barmode="group"
 )
 
 st.plotly_chart(
     fig2,
     use_container_width=True
 )
-```
-
-# =========================
-
-# TABLE
-
-# =========================
+=========================
+TABLE
+=========================
 
 st.subheader("📋 รายการทรัพย์สิน")
 
@@ -283,15 +213,12 @@ num_rows="dynamic",
 hide_index=True
 )
 
-# =========================
-
-# SAVE TABLE
-
-# =========================
+=========================
+SAVE TABLE
+=========================
 
 if st.button("💾 บันทึกตาราง"):
 
-```
 edited_df = edited_df.astype(str)
 
 sheet.clear()
@@ -308,19 +235,14 @@ st.success("✅ บันทึกข้อมูลเรียบร้อย"
 st.cache_data.clear()
 
 st.rerun()
-```
-
-# =========================
-
-# ADD DATA
-
-# =========================
+=========================
+ADD DATA
+=========================
 
 st.subheader("➕ เพิ่มทรัพย์สินใหม่")
 
 with st.form("add_form"):
 
-```
 asset_id = st.text_input("Asset ID")
 device = st.text_input("Device")
 brand = st.text_input("Brand")
@@ -333,9 +255,7 @@ status = st.selectbox(
     ["Active", "Spare", "Repair"]
 )
 
-submit = st.form_submit_button(
-    "➕ เพิ่มข้อมูล"
-)
+submit = st.form_submit_button("➕ เพิ่มข้อมูล")
 
 if submit:
 
@@ -370,13 +290,9 @@ if submit:
     st.cache_data.clear()
 
     st.rerun()
-```
-
-# =========================
-
-# DELETE
-
-# =========================
+=========================
+DELETE
+=========================
 
 st.subheader("🗑️ ลบข้อมูล")
 
@@ -387,7 +303,6 @@ df["Asset ID"].astype(str).unique()
 
 if st.button("❌ ลบข้อมูล"):
 
-```
 new_df = df[
     df["Asset ID"].astype(str)
     != str(delete_asset)
@@ -409,13 +324,9 @@ st.success("✅ ลบข้อมูลเรียบร้อย")
 st.cache_data.clear()
 
 st.rerun()
-```
-
-# =========================
-
-# DOWNLOAD CSV
-
-# =========================
+=========================
+DOWNLOAD CSV
+=========================
 
 csv = df.to_csv(
 index=False
@@ -428,18 +339,14 @@ csv,
 "text/csv"
 )
 
-# =========================
-
-# REFRESH
-
-# =========================
+=========================
+REFRESH
+=========================
 
 if st.button("🔄 Refresh"):
 
-```
 st.cache_data.clear()
 
 st.session_state.df = load_data()
 
 st.rerun()
-```
