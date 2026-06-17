@@ -126,14 +126,21 @@ total_asset = len(df)
 notebook_count = (
     df["Device"]
     .astype(str)
-    .str.contains("Notebook", case=False, na=False)
+    .str.contains("Notebook|Laptop", case=False, na=False)
     .sum()
 )
 
 computer_count = (
     df["Device"]
     .astype(str)
-    .str.contains("Computer", case=False, na=False)
+    .str.contains("Computer|Desktop|PC", case=False, na=False)
+    .sum()
+)
+
+printer_count = (
+    df["Device"]
+    .astype(str)
+    .str.contains("Printer|Brother|Canon|HP|Epson", case=False, na=False)
     .sum()
 )
 
@@ -147,13 +154,22 @@ repair_count = (
 # =========================
 # KPI DISPLAY
 # =========================
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3, c4, c5 = st.columns(5)
 
-c1.metric("สินทรัพย์ทั้งหมด", total_asset)
-c2.metric("Notebook", notebook_count)
-c3.metric("Computer", computer_count)
-c4.metric("Repair", repair_count)
+with c1:
+    st.metric("📦 สินทรัพย์ทั้งหมด", total_asset)
 
+with c2:
+    st.metric("💻 Notebook", notebook_count)
+
+with c3:
+    st.metric("🖥️ Computer", computer_count)
+
+with c4:
+    st.metric("🖨️ Printer", printer_count)
+
+with c5:
+    st.metric("🔧 Repair", repair_count)
 # =========================
 # CHART
 # =========================
