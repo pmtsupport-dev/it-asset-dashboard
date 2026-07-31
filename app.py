@@ -5,17 +5,11 @@ import sheets_helper as sh
 
 # =========================
 # PAGE CONFIG
-# อ่าน query param ก่อน เพื่อเลือก layout ให้เหมาะกับหน้าจอ
-# หน้าแจ้งซ่อม/ประวัติ (เปิดจากมือถือผ่าน QR) ใช้ layout แคบแบบแอปมือถือ
-# หน้า dashboard (เปิดจากคอม) ใช้ layout กว้าง
 # =========================
-_view = st.query_params.get("view", "dashboard")
-_page_layout = "centered" if _view in ("repair", "history") else "wide"
-
 st.set_page_config(
     page_title="IT Asset & Repair System",
     page_icon="💻",
-    layout=_page_layout
+    layout="wide"
 )
 
 # =========================
@@ -45,117 +39,10 @@ h1,h2,h3,h4,label,p,div{
     background:#2563eb;
     color:white;
     font-weight:bold;
-    height:48px;
-    font-size:16px;
+    height:45px;
 }
-
-/* ทำให้ตัวหนังสือในช่องกรอกข้อมูลอ่านง่าย ชัดเจน ตัดกับพื้นหลัง */
-.stTextInput input,
-.stTextArea textarea,
-.stSelectbox div[data-baseweb="select"] > div{
-    background-color:#ffffff !important;
-    color:#0f172a !important;
-    font-size:16px !important;
-    border-radius:12px !important;
-    border:1px solid #cbd5e1 !important;
-    caret-color:#0f172a !important;
-}
-.stTextInput input::placeholder,
-.stTextArea textarea::placeholder{
-    color:#64748b !important;
-    opacity:1 !important;
-}
-.stTextInput label, .stTextArea label, .stSelectbox label{
-    font-weight:600 !important;
-    font-size:15px !important;
-    color:#e2e8f0 !important;
-}
-
-/* ==================================================
-   MOBILE APP STYLE — ใช้เฉพาะหน้าแจ้งซ่อม/ประวัติซ่อม
-   ================================================== */
-.mobile-header{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    background:linear-gradient(135deg,#2563eb,#1d4ed8);
-    padding:22px 20px;
-    border-radius:0 0 24px 24px;
-    margin:-4rem -1rem 24px -1rem;
-    box-shadow:0 8px 24px rgba(37,99,235,0.35);
-}
-.mobile-header .icon{
-    font-size:34px;
-    line-height:1;
-}
-.mobile-header .title{
-    font-size:20px;
-    font-weight:800;
-    color:white;
-    margin:0;
-}
-.mobile-header .subtitle{
-    font-size:13px;
-    color:rgba(255,255,255,0.85);
-    margin:2px 0 0 0;
-}
-
-.info-card{
-    background:rgba(255,255,255,0.06);
-    border:1px solid rgba(255,255,255,0.14);
-    border-radius:18px;
-    padding:18px 20px;
-    margin-bottom:18px;
-}
-.info-card .row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:6px 0;
-    font-size:14px;
-    border-bottom:1px solid rgba(255,255,255,0.06);
-}
-.info-card .row:last-child{ border-bottom:none; }
-.info-card .label{ color:#94a3b8; }
-.info-card .value{ color:#ffffff; font-weight:700; text-align:right; }
-.info-card .note{ margin-top:10px; color:#e2e8f0; font-size:14px; line-height:1.5; }
-.info-card .subnote{ color:#94a3b8; font-size:12.5px; margin-top:6px; }
-
-.status-badge{
-    display:inline-block;
-    padding:4px 14px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:800;
-}
-.status-pending{ background:#fef3c7; color:#92400e; }
-.status-progress{ background:#dbeafe; color:#1e40af; }
-.status-done{ background:#dcfce7; color:#166534; }
 </style>
 """, unsafe_allow_html=True)
-
-
-def mobile_header(icon, title, subtitle):
-    """แสดงหัวข้อสไตล์แอปมือถือ (การ์ดสีน้ำเงินโค้งมน ด้านบนสุดของหน้า)"""
-    st.markdown(f"""
-    <div class="mobile-header">
-        <div class="icon">{icon}</div>
-        <div>
-            <p class="title">{title}</p>
-            <p class="subtitle">{subtitle}</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-def status_badge(status):
-    """คืนค่า HTML ของป้ายสถานะสี ตามสถานะของตั๋ว"""
-    cls = {
-        "รอดำเนินการ": "status-pending",
-        "กำลังซ่อม": "status-progress",
-        "เสร็จแล้ว": "status-done",
-    }.get(status, "status-pending")
-    return f'<span class="status-badge {cls}">{status}</span>'
 
 # =========================
 # GOOGLE SHEET CSV (อ่านอย่างเดียว - รายการอุปกรณ์)
@@ -190,7 +77,7 @@ def get_asset(asset_id, df):
 # URL: ?view=repair&asset_id=XXXX
 # =========================================================
 def show_repair_form(asset_id, df):
-    mobile_header("🔧", "แจ้งซ่อมอุปกรณ์ไอที", "กรอกรายละเอียดด้านล่างเพื่อแจ้งซ่อม")
+    st.title("🔧 แจ้งซ่อมอุปกรณ์ไอที")
 
     if not asset_id:
         st.warning("ไม่พบรหัสอุปกรณ์ (asset_id) กรุณาสแกน QR code ที่ติดอยู่บนอุปกรณ์อีกครั้ง")
@@ -201,22 +88,19 @@ def show_repair_form(asset_id, df):
         st.error(f"ไม่พบอุปกรณ์รหัส **{asset_id}** ในระบบ กรุณาติดต่อฝ่ายไอที")
         return
 
-    st.markdown(f"""
-    <div class="info-card">
-        <div class="row"><span class="label">Asset ID</span><span class="value">{asset['Asset ID']}</span></div>
-        <div class="row"><span class="label">อุปกรณ์</span><span class="value">{asset.get('Device', '-')} {asset.get('Brand', '')}</span></div>
-        <div class="row"><span class="label">แผนก</span><span class="value">{asset.get('Department', '-')}</span></div>
-        <div class="row"><span class="label">ผู้ใช้ปัจจุบัน</span><span class="value">{asset.get('User', '-')}</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.info(
+        f"**Asset ID:** {asset['Asset ID']}  \n"
+        f"**อุปกรณ์:** {asset.get('Device', '-')} {asset.get('Brand', '')}  \n"
+        f"**แผนก:** {asset.get('Department', '-')}  \n"
+        f"**ผู้ใช้ปัจจุบัน:** {asset.get('User', '-')}"
+    )
 
     with st.form("repair_form"):
         problem = st.text_area(
-            "📝 ปัญหาที่พบ *",
-            placeholder="อธิบายอาการ/ปัญหาที่พบโดยละเอียด เช่น เปิดไม่ติด, จอฟ้า, พิมพ์งานไม่ออก",
-            height=130
+            "ปัญหาที่พบ *",
+            placeholder="อธิบายอาการ/ปัญหาที่พบโดยละเอียด เช่น เปิดไม่ติด, จอฟ้า, พิมพ์งานไม่ออก"
         )
-        reported_by = st.text_input("👤 ชื่อผู้แจ้ง *", placeholder="ชื่อ-นามสกุล")
+        reported_by = st.text_input("ชื่อผู้แจ้ง *")
         submitted = st.form_submit_button("📨 ส่งแจ้งซ่อม", use_container_width=True)
 
         if submitted:
@@ -242,7 +126,7 @@ def show_repair_form(asset_id, df):
 # URL: ?view=history&asset_id=XXXX
 # =========================================================
 def show_repair_history(asset_id, df):
-    mobile_header("📋", "ประวัติการซ่อม", "สถานะล่าสุดของการแจ้งซ่อมเครื่องนี้")
+    st.title("📋 ประวัติการซ่อม")
 
     if not asset_id:
         st.warning("ไม่พบรหัสอุปกรณ์ (asset_id) กรุณาสแกน QR code อีกครั้ง")
@@ -253,12 +137,10 @@ def show_repair_history(asset_id, df):
         st.error(f"ไม่พบอุปกรณ์รหัส **{asset_id}** ในระบบ")
         return
 
-    st.markdown(f"""
-    <div class="info-card">
-        <div class="row"><span class="label">Asset ID</span><span class="value">{asset['Asset ID']}</span></div>
-        <div class="row"><span class="label">อุปกรณ์</span><span class="value">{asset.get('Device', '-')} {asset.get('Brand', '')}</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.info(
+        f"**Asset ID:** {asset['Asset ID']}  \n"
+        f"**อุปกรณ์:** {asset.get('Device', '-')} {asset.get('Brand', '')}"
+    )
 
     with st.spinner("กำลังโหลดประวัติ..."):
         tickets = sh.get_tickets_by_asset(asset_id)
@@ -267,17 +149,15 @@ def show_repair_history(asset_id, df):
         st.info("ยังไม่มีประวัติการแจ้งซ่อมสำหรับอุปกรณ์นี้")
         return
 
+    status_icon = {"รอดำเนินการ": "🟡", "กำลังซ่อม": "🔵", "เสร็จแล้ว": "🟢"}
+
     for t in sorted(tickets, key=lambda x: x.get("ReportedAt", ""), reverse=True):
         status = t.get("Status", "รอดำเนินการ")
-        st.markdown(f"""
-        <div class="info-card">
-            <div class="row"><span class="label">เลขตั๋ว</span><span class="value">{t.get('Ticket ID')}</span></div>
-            <div class="row"><span class="label">วันที่แจ้ง</span><span class="value">{t.get('ReportedAt')}</span></div>
-            <div class="row"><span class="label">สถานะ</span><span class="value">{status_badge(status)}</span></div>
-            <div class="note"><b>ปัญหา:</b> {t.get('Problem')}</div>
-            <div class="subnote">แจ้งโดย {t.get('ReportedBy')}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        icon = status_icon.get(status, "⚪")
+        with st.expander(f"{icon} {t.get('Ticket ID')} — {t.get('ReportedAt')}"):
+            st.write(f"**ปัญหา:** {t.get('Problem')}")
+            st.write(f"**ผู้แจ้ง:** {t.get('ReportedBy')}")
+            st.write(f"**สถานะ:** {status}")
 
 
 # =========================================================
