@@ -21,6 +21,8 @@ REPAIR_HEADERS = [
     "Department", "Problem", "ReportedBy", "ReportedAt", "Status"
 ]
 
+ASSET_STATUS_OPTIONS = ["Active", "Spare", "Repair"]
+
 STATUS_OPTIONS = ["รอดำเนินการ", "กำลังซ่อม", "เสร็จแล้ว"]
 
 
@@ -91,5 +93,72 @@ def update_ticket_status(ticket_id, new_status):
     for i, row in enumerate(values[1:], start=2):  # แถวที่ 1 = header
         if row[id_col] == ticket_id:
             ws.update_cell(i, status_col + 1, new_status)
+            return True
+    return False
+
+
+# =========================================================
+# ASSET SHEET — รายการอุปกรณ์ (แผ่นแรกสุดของไฟล์ Google Sheet)
+# =========================================================
+
+def get_asset_worksheet():
+    """
+    คืนค่า worksheet ของรายการอุปกรณ์ (แผ่นแรกสุด/index 0 ของไฟล์)
+    สมมติว่าเป็นแผ่นเดิมที่ dashboard ใช้อยู่แต่แรก (สร้างก่อนแผ่น RepairTickets)
+    """
+    client = get_client()
+    workbook = client.open_by_key(SHEET_ID)
+    return workbook.get_worksheet(0)
+
+
+def get_all_assets():
+    """คืนค่ารายการอุปกรณ์ทั้งหมด เป็น list ของ dict"""
+    ws = get_asset_worksheet()
+    return ws.get_all_records()
+
+
+def add_asset(new_asset: dict):
+    """
+    เพิ่มอุปกรณ์ใหม่ 1 แถว
+    new_asset: dict เช่น {"Asset ID": "IT-0050", "Device": "Notebook", ...}
+    ลำดับคอลัมน์จะเรียงตาม header แถวแรกของชีตจริง (ไม่ต้องตรงกับ dict)
+    """
+    ws = get_asset_worksheet()
+    headers = ws.row_values(1)
+    row = [str(new_asset.get(h, "")) for h in headers]
+    ws.append_row(row)
+
+
+def update_asset(asset_id, updated_fields: dict):
+    """
+    แก้ไขข้อมูลอุปกรณ์ที่มีอยู่ ระบุด้วย Asset ID (แก้ไขได้เฉพาะฟิลด์ใน updated_fields)
+    คืนค่า True ถ้าเจอและแก้ไขสำเร็จ, False ถ้าไม่เจอ Asset ID นี้
+    """
+    ws = get_asset_worksheet()
+    values = ws.get_all_values()
+    headers = values[0]
+    id_col = headers.index("Asset ID")
+
+    for i, row in enumerate(values[1:], start=2):
+        if row[id_col] == str(asset_id):
+            new_row = row.copy()
+            for key, val in updated_fields.items():
+                if key in headers:
+                    new_row[headers.index(key)] = str(val)
+            ws.update(f"A{i}", [new_row])
+            return True
+    return False
+
+
+def delete_asset(asset_id):
+    """ลบอุปกรณ์ 1 แถว ระบุด้วย Asset ID — คืนค่า True ถ้าเจอและลบสำเร็จ"""
+    ws = get_asset_worksheet()
+    values = ws.get_all_values()
+    headers = values[0]
+    id_col = headers.index("Asset ID")
+
+    for i, row in enumerate(values[1:], start=2):
+        if row[id_col] == str(asset_id):
+            ws.delete_rows(i)
             return True
     return False
